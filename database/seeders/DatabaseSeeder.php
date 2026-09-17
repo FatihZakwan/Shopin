@@ -3,23 +3,44 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Product;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Buat User Admin
+        User::create([
+            'name' => 'Admin Shopin',
+            'email' => 'admin@shopin.test',
+            'password' => 'admin123',
+            'role' => 'ADMIN',
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Buat User Pembeli
+        User::create([
+            'name' => 'User Buyer',
+            'email' => 'user@shopin.test',
+            'password' => 'user123',
+            'role' => 'USER',
+        ]);
+
+        // Buat Sample Produk
+        Product::create([
+            'name' => 'Sepatu Sneakers Casual',
+            'price' => 250000,
+            'category' => 'Fashion',
+            'stock' => 10,
+            'description' => 'Sepatu sneakers nyaman untuk harian.',
+        ]);
+
+        Product::create([
+            'name' => 'Headphone Bluetooth Bass',
+            'price' => 180000,
+            'category' => 'Elektronik',
+            'stock' => 15,
+            'description' => 'Headphone suara jernih dan bass mantap.',
         ]);
     }
 }
