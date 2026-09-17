@@ -1,43 +1,73 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mt-6">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        <!-- Gambar Produk -->
-        <div class="h-80 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
-            <i class="fa-solid fa-image text-7xl"></i>
+<div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+    
+    @if(session('success'))
+        <div class="m-6 mb-0 bg-green-100 text-green-700 p-3 rounded-xl text-sm font-medium flex items-center justify-between">
+            <span><i class="fa-solid fa-circle-check mr-1"></i> {{ session('success') }}</span>
+            <a href="/cart" class="underline font-bold text-xs">Lihat Keranjang &rarr;</a>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="m-6 mb-0 bg-red-100 text-red-700 p-3 rounded-xl text-sm font-medium">
+            <i class="fa-solid fa-circle-exclamation mr-1"></i> {{ session('error') }}
+        </div>
+    @endif
+
+    <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Foto Produk Besar -->
+        <div class="aspect-square bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative">
+            @if($product->image)
+                <img src="{{ $product->image }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+            @else
+                <div class="w-full h-full flex items-center justify-center text-gray-300">
+                    <i class="fa-solid fa-image text-6xl"></i>
+                </div>
+            @endif
         </div>
 
-        <!-- Detail Produk -->
-        <div class="flex flex-col justify-between">
+        <!-- Detail Rincian Produk -->
+        <div class="flex flex-col justify-between space-y-4">
             <div>
-                <span class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">{{ $product->category }}</span>
-                <h1 class="text-2xl font-bold text-gray-800 mt-2">{{ $product->name }}</h1>
-                <p class="text-2xl font-extrabold text-indigo-600 mt-2">Rp{{ number_format($product->price, 0, ',', '.') }}</p>
-                <p class="text-sm text-gray-500 mt-2"><i class="fa-solid fa-boxes-stacked"></i> Stok Tersedia: <span class="font-semibold text-gray-800">{{ $product->stock }}</span></p>
+                <span class="inline-block bg-indigo-50 text-indigo-600 text-xs font-bold px-3 py-1 rounded-full mb-2">
+                    {{ $product->category }}
+                </span>
+                <h1 class="text-2xl font-bold text-gray-800 leading-tight mb-2">{{ $product->name }}</h1>
+                
+                <div class="bg-gray-50 p-4 rounded-2xl my-4">
+                    <p class="text-xs text-gray-400 font-semibold uppercase mb-1">Harga</p>
+                    <p class="text-3xl font-extrabold text-indigo-600">Rp{{ number_format($product->price, 0, ',', '.') }}</p>
+                </div>
 
-                <div class="mt-4">
-                    <h3 class="text-sm font-bold text-gray-700">Deskripsi:</h3>
-                    <p class="text-gray-600 text-sm mt-1 leading-relaxed">{{ $product->description ?? 'Tidak ada deskripsi.' }}</p>
+                <div class="space-y-1 text-sm text-gray-600">
+                    <p class="font-semibold text-gray-700">Deskripsi Produk:</p>
+                    <p class="text-gray-500 leading-relaxed text-xs">{{ $product->description ?? 'Tidak ada deskripsi produk.' }}</p>
+                </div>
+
+                <div class="mt-4 text-xs text-gray-500 flex items-center gap-2">
+                    <span>Stok Tersedia:</span>
+                    <span class="font-bold text-gray-800">{{ $product->stock }} pcs</span>
                 </div>
             </div>
 
-            <form action="/cart/add" method="POST" class="mt-6 pt-4 border-t border-gray-100">
+            <!-- Form Tambah Keranjang + Pemilih Jumlah (Quantity) -->
+            <form action="{{ route('cart.add') }}" method="POST" class="pt-4 border-t space-y-4">
                 @csrf
                 <input type="hidden" name="product_id" value="{{ $product->id }}">
 
-                <div class="flex items-center gap-4 mb-4">
-                    <span class="text-sm font-medium text-gray-700">Jumlah:</span>
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="decrementQty()" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-gray-700 flex items-center justify-center">-</button>
-                        <input type="number" id="qty-input" name="quantity" value="1" min="1" max="{{ $product->stock }}" readonly class="w-12 text-center border border-gray-300 rounded-lg py-1 font-semibold text-gray-800">
-                        <button type="button" onclick="incrementQty({{ $product->stock }})" class="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-gray-700 flex items-center justify-center">+</button>
+                <div class="flex items-center gap-4">
+                    <label class="text-xs font-bold text-gray-600 uppercase">Jumlah:</label>
+                    <div class="flex items-center border border-gray-300 rounded-xl overflow-hidden">
+                        <button type="button" onclick="decrementQty()" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-sm">-</button>
+                        <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ $product->stock }}" class="w-12 text-center text-sm font-bold border-none focus:outline-none">
+                        <button type="button" onclick="incrementQty({{ $product->stock }})" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-sm">+</button>
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition flex items-center justify-center gap-2 shadow-md">
-                    <i class="fa-solid fa-cart-plus"></i> Tambah ke Keranjang
+                <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-2xl font-bold hover:bg-indigo-700 transition shadow-md flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-cart-plus"></i> + Masukkan Keranjang
                 </button>
             </form>
         </div>
@@ -45,20 +75,15 @@
 </div>
 
 <script>
-function incrementQty(maxStock) {
-    let input = document.getElementById('qty-input');
-    let val = parseInt(input.value);
-    if (val < maxStock) {
-        input.value = val + 1;
+    function incrementQty(max) {
+        let input = document.getElementById('quantity');
+        let val = parseInt(input.value);
+        if (val < max) input.value = val + 1;
     }
-}
-
-function decrementQty() {
-    let input = document.getElementById('qty-input');
-    let val = parseInt(input.value);
-    if (val > 1) {
-        input.value = val - 1;
+    function decrementQty() {
+        let input = document.getElementById('quantity');
+        let val = parseInt(input.value);
+        if (val > 1) input.value = val - 1;
     }
-}
 </script>
 @endsection
