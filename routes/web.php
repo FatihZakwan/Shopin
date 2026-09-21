@@ -37,12 +37,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout/success/{id}', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::post('/checkout/pay/{id}', [CheckoutController::class, 'payNow'])->name('checkout.pay');
 
-    // Admin Routes
-    Route::get('/admin', function () {
-        return redirect('/admin/dashboard');
-    });
-
-    Route::get('/admin/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
+   Route::middleware(['auth'])->group(function () {
+    Route::post('/admin/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
+    Route::put('/admin/users/{id}', [AdminController::class, 'updateUser'])->name('admin.users.update');
+    Route::delete('/admin/users/{id}', [AdminController::class, 'destroyUser'])->name('admin.users.destroy');
+});
 });

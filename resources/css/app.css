@@ -6,4 +6,10 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Palette Warna Kustom SHOPIN */
+    --color-shopin-light: #E3F2FD;
+    --color-shopin-soft: #90CAF9;
+    --color-shopin-primary: #2196F3;
+    --color-shopin-dark: #0D47A1;
 }
