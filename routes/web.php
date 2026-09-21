@@ -8,9 +8,8 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController; // <-- Tambahkan ini
 
-// Catalog Routes
-Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
+// Mengubah rute utama '/' agar langsung menampilkan dashboard admin
+Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
 // Guest Routes
 Route::middleware('guest')->group(function () {
