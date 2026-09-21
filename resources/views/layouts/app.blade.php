@@ -32,7 +32,11 @@
             <div class="flex items-center gap-4 text-sm font-medium">
                 @auth
                     @if(Auth::user()->role === 'ADMIN')
-                        <a href="/admin" class="hover:underline text-white"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+                        <!-- Ubah dari href="{{ route('products.index') }}" menjadi: -->
+                  <a href="{{ route('admin.dashboard') }}" class="bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-800 transition flex items-center space-x-1">
+                     <i class="fas font-medium fa-user-shield text-xs"></i>
+                        <span>Admin</span>
+                  </a>
                     @else
                         <a href="/cart" class="hover:underline flex items-center gap-1 text-white">
                             <i class="fa-solid fa-cart-shopping"></i> Keranjang
