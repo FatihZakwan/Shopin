@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
@@ -14,96 +15,113 @@ use Illuminate\Support\Str;
 class CheckoutController extends Controller
 {
     // Menampilkan halaman formulir checkout
-    public function index()
+    public function index(Request $request)
     {
-        $cart = session()->get('cart', []);
+        $selectedIds = $request->input('selected_items', []);
 
-        if (empty($cart)) {
-            return redirect()->route('cart.index')->with('error', 'Keranjang belanja kamu masih kosong!');
+        // Jika tidak ada item terpilih dari form, redirect kembali
+        if (empty($selectedIds)) {
+            return redirect()->route('cart.index')->with('error', 'Pilih minimal satu produk untuk di-checkout.');
         }
 
-        $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
+        // Ambil data keranjang dari DB berdasarkan item yang dicentang
+        $cartItems = Cart::with('product')
+            ->where('user_id', Auth::id())
+            ->whereIn('id', $selectedIds)
+            ->get();
+
+        if ($cartItems->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'Produk di keranjang tidak ditemukan.');
         }
 
-        return view('checkout.index', compact('cart', 'total'));
+        $total = $cartItems->sum(function ($item) {
+            return $item->product->price * $item->quantity;
+        });
+
+        return view('checkout.index', compact('cartItems', 'total', 'selectedIds'));
     }
 
     // Memproses pembuatan order & pembayaran
     public function store(Request $request)
     {
         $request->validate([
-            'customer_name' => 'required|string|max:255',
+            'customer_name'  => 'required|string|max:255',
             'customer_email' => 'required|email|max:255',
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string',
+            'phone'          => 'required|string|max:20',
+            'address'        => 'required|string',
             'payment_method' => 'required|string',
+            'cart_ids'       => 'required|array', // Menerima array ID item keranjang
+            'cart_ids.*'     => 'exists:carts,id',
         ]);
 
-        $cart = session()->get('cart', []);
+        // Ambil item dari database
+        $cartItems = Cart::with('product')
+            ->where('user_id', Auth::id())
+            ->whereIn('id', $request->cart_ids)
+            ->get();
 
-        if (empty($cart)) {
-            return redirect()->route('cart.index')->with('error', 'Keranjang belanja kamu kosong!');
+        if ($cartItems->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'Keranjang belanja kamu kosong atau item tidak valid!');
         }
 
-        // Hitung ulang total
-        $total = 0;
-        foreach ($cart as $item) {
-            $total += $item['price'] * $item['quantity'];
-        }
+        // Hitung total harga
+        $total = $cartItems->sum(function ($item) {
+            return $item->product->price * $item->quantity;
+        });
 
-        // Jalankan Transaction DB untuk keamanan data
+        // Database Transaction untuk menjamin konsistensi data
         DB::beginTransaction();
 
         try {
             // 1. Buat Data Order
             $order = Order::create([
-                'user_id' => Auth::id(),
-                'invoice' => 'INV-' . strtoupper(Str::random(8)),
-                'total' => $total,
-                'status' => 'UNPAID',
-                'customer_name' => $request->customer_name,
+                'user_id'        => Auth::id(),
+                'invoice'        => 'INV-' . strtoupper(Str::random(8)),
+                'total'          => $total,
+                'status'         => 'UNPAID',
+                'customer_name'  => $request->customer_name,
                 'customer_email' => $request->customer_email,
-                'phone' => $request->phone,
-                'address' => $request->address,
+                'phone'          => $request->phone,
+                'address'        => $request->address,
             ]);
 
             // 2. Buat Item Order & Potong Stok Produk
-            foreach ($cart as $item) {
-                $product = Product::find($item['id']);
+            foreach ($cartItems as $item) {
+                $product = $item->product;
 
-                if (!$product || $product->stock < $item['quantity']) {
+                if (!$product || $product->stock < $item->quantity) {
                     DB::rollBack();
-                    return back()->with('error', 'Stok untuk ' . $item['name'] . ' tidak mencukupi.');
+                    return back()->with('error', 'Stok untuk ' . ($product->name ?? 'Produk') . ' tidak mencukupi.');
                 }
 
                 OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item['id'],
-                    'product_name' => $item['name'],
-                    'price' => $item['price'],
-                    'quantity' => $item['quantity'],
-                    'subtotal' => $item['price'] * $item['quantity'],
+                    'order_id'     => $order->id,
+                    'product_id'   => $product->id,
+                    'product_name' => $product->name,
+                    'price'        => $product->price,
+                    'quantity'     => $item->quantity,
+                    'subtotal'     => $product->price * $item->quantity,
                 ]);
 
                 // Kurangi stok produk
-                $product->decrement('stock', $item['quantity']);
+                $product->decrement('stock', $item->quantity);
             }
 
             // 3. Buat Record Pembayaran (Simulasi)
             Payment::create([
-                'order_id' => $order->id,
-                'method' => $request->payment_method,
+                'order_id'  => $order->id,
+                'method'    => $request->payment_method,
                 'reference' => 'PAY-' . time(),
-                'amount' => $total,
-                'status' => 'UNPAID',
+                'amount'    => $total,
+                'status'    => 'UNPAID',
             ]);
 
-            DB::commit();
+            // 4. Hapus item terpilih dari tabel carts
+            Cart::whereIn('id', $request->cart_ids)
+                ->where('user_id', Auth::id())
+                ->delete();
 
-            // Kosongkan keranjang belanja
-            session()->forget('cart');
+            DB::commit();
 
             return redirect()->route('checkout.success', $order->id)->with('success', 'Pesanan berhasil dibuat!');
 
