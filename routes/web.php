@@ -5,13 +5,15 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
-use App\Http\Controllers\CheckoutController; // <-- Tambahkan ini
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\AdminProductController;
 
-// Catalog Routes
+// Catalog Routes (Bisa Diakses Publik)
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
 
-// Guest Routes
+// Guest Routes (Khusus Pengguna yang Belum Login)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -19,9 +21,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
 });
 
-// Protected Routes (Harus Login)
+// Protected Routes (Wajib Login)
 Route::middleware('auth')->group(function () {
-    // Auth Routes
+    
+    // Auth Route
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Cart Routes
@@ -37,12 +40,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout/success/{id}', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::post('/checkout/pay/{id}', [CheckoutController::class, 'payNow'])->name('checkout.pay');
 
-    // Admin Routes
-    Route::get('/admin', function () {
-        return redirect('/admin/dashboard');
-    });
+    // Admin Group Routes (Pengelompokan Rute Panel Admin)
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', function () {
+            return redirect()->route('admin.dashboard');
+        });
 
-    Route::get('/admin/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
+        // Dashboard Admin
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+        // CRUD Produk Admin
+        Route::resource('products', AdminProductController::class);
+    });
 });
