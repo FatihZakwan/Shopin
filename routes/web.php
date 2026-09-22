@@ -46,4 +46,17 @@ Route::middleware('auth')->group(function () {
 // Rute khusus untuk Halaman Dashboard Admin
 Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
+
+// 1. Halaman Utama (Default untuk Pengunjung & User Biasa)
+Route::get('/', [ProductController::class, 'index'])->name('products.index');
+
+// 2. Halaman Khusus Admin (Dilindungi Auth & AdminMiddleware)
+Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->group(function () {
+    Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+    
+    // Rute CRUD Produk & Pengguna nantinya dimasukkan di dalam grup ini:
+    // Route::post('/admin/products', [AdminController::class, 'storeProduct'])->name('admin.products.store');
+    // Route::delete('/admin/products/{id}', [AdminController::class, 'destroyProduct'])->name('admin.products.destroy');
+});
+
 });

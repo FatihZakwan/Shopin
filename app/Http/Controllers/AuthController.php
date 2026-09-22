@@ -14,11 +14,26 @@ class AuthController extends Controller
     }
 
     public function login(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+{
+    $credentials = $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
+
+    if (Auth::attempt($credentials)) {
+        $request->session()->regenerate();
+
+        // Cek Role User
+        if (Auth::user()->role === 'ADMIN') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        return redirect()->intended('/');
+    }
+
+    return back()->withErrors([
+        'email' => 'Email atau password salah.',
+    ]);
 
         // Cari user berdasarkan email & password plaintext
         $user = User::where('email', $request->email)
