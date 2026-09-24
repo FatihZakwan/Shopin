@@ -1,6 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
+<!-- Style CSS untuk Menghilangkan Panah Bawaan Input Number Browser -->
+<style>
+    /* Chrome, Safari, Edge, Opera */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Firefox */
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+</style>
+
 <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
     
     @if(session('success'))
@@ -60,9 +75,9 @@
                 <div class="flex items-center gap-4">
                     <label class="text-xs font-bold text-gray-600 uppercase">Jumlah:</label>
                     <div class="flex items-center border border-gray-300 rounded-xl overflow-hidden">
-                        <button type="button" onclick="decrementQty()" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-sm">-</button>
-                        <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ $product->stock }}" class="w-12 text-center text-sm font-bold border-none focus:outline-none">
-                        <button type="button" onclick="incrementQty({{ $product->stock }})" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-sm">+</button>
+                        <button type="button" onclick="decrementQty()" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-sm transition active:scale-95">-</button>
+                        <input type="number" id="quantity" name="quantity" value="1" min="1" max="{{ $product->stock }}" class="w-12 text-center text-sm font-bold border-none focus:outline-none focus:ring-0">
+                        <button type="button" onclick="incrementQty({{ $product->stock }})" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-sm transition active:scale-95">+</button>
                     </div>
                 </div>
 
@@ -77,12 +92,12 @@
 <script>
     function incrementQty(max) {
         let input = document.getElementById('quantity');
-        let val = parseInt(input.value);
+        let val = parseInt(input.value) || 1;
         if (val < max) input.value = val + 1;
     }
     function decrementQty() {
         let input = document.getElementById('quantity');
-        let val = parseInt(input.value);
+        let val = parseInt(input.value) || 1;
         if (val > 1) input.value = val - 1;
     }
 </script>

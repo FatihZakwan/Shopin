@@ -5,7 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config('app.name', 'SHOPIN') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Animate.css untuk animasi popup -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <!-- SweetAlert2 CSS & JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- FontAwesome Icon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS khusus untuk menyembunyikan elemen x-cloak Alpine.js -->
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
 <body class="bg-gray-100 flex flex-col min-h-screen">
 
@@ -31,7 +42,7 @@
             <!-- Nav Links -->
             <div class="flex items-center gap-4 text-sm font-medium">
                 @auth
-                    @if(Auth::user()->role === 'ADMIN')
+                    @if(strtoupper(Auth::user()->role) === 'ADMIN')
                         <a href="/admin" class="hover:underline"><i class="fa-solid fa-gauge"></i> Dashboard</a>
                     @else
                         <a href="/cart" class="hover:underline flex items-center gap-1">
@@ -44,11 +55,11 @@
                     <span class="text-xs bg-indigo-700 px-2 py-1 rounded"><i class="fa-solid fa-user"></i> {{ Auth::user()->name }}</span>
                     <form action="/logout" method="POST" class="inline">
                         @csrf
-                        <button type="submit" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-white text-xs">Logout</button>
+                        <button type="submit" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-white text-xs transition">Logout</button>
                     </form>
                 @else
                     <a href="/login" class="hover:underline"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
-                    <a href="/register" class="bg-white text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-gray-100"><i class="fa-solid fa-user-plus"></i> Register</a>
+                    <a href="/register" class="bg-white text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"><i class="fa-solid fa-user-plus"></i> Register</a>
                 @endauth
             </div>
         </div>
@@ -63,6 +74,40 @@
     <footer class="bg-gray-800 text-gray-300 py-4 text-center text-sm mt-8">
         &copy; 2026 SHOPIN. Project Pembelajaran Laravel.
     </footer>
+
+    <!-- Script Animasi Notifikasi SweetAlert2 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            @if(session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: @json(session('success')),
+                    showConfirmButton: false,
+                    timer: 2500,
+                    timerProgressBar: true,
+                    showClass: {
+                        popup: 'animate__animated animate__fadeInDown'
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__fadeOutUp'
+                    }
+                });
+            @endif
+
+            @if(session('error') || $errors->any())
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: @json(session('error') ?? $errors->first()),
+                    confirmButtonColor: '#4F46E5',
+                    showClass: {
+                        popup: 'animate__animated animate__shakeX'
+                    }
+                });
+            @endif
+        });
+    </script>
 
 </body>
 </html>

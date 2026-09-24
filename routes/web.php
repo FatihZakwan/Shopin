@@ -8,6 +8,8 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\TripayCallbackController;
+use App\Http\Controllers\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +33,13 @@ Route::middleware('guest')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Callback Webhook Tripay (Tanpa CSRF/Auth)
+|--------------------------------------------------------------------------
+*/
+Route::post('/api/tripay/callback', [TripayCallbackController::class, 'handle'])->name('tripay.callback');
+
+/*
+|--------------------------------------------------------------------------
 | Protected Routes (Wajib Login)
 |--------------------------------------------------------------------------
 */
@@ -46,11 +55,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
     Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
 
-    // Checkout & Order Routes
+    // Checkout Routes
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-    Route::get('/checkout/success/{id}', [CheckoutController::class, 'success'])->name('checkout.success');
+    
+    // Return URL dari Tripay (Tanpa parameter {id} agar sesuai dengan TripayService)
+    Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::post('/checkout/pay/{id}', [CheckoutController::class, 'payNow'])->name('checkout.pay');
+
+    // Orders Routes
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
 
     /*
     |--------------------------------------------------------------------------
@@ -65,7 +80,7 @@ Route::middleware('auth')->group(function () {
         // Dashboard Admin
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-        // CRUD Produk Admin (index, create, store, show, edit, update, destroy)
+        // CRUD Produk Admin
         Route::resource('products', AdminProductController::class);
     });
 });

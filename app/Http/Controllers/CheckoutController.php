@@ -6,7 +6,7 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
-use App\Models\Product;
+use App\Services\TripayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,17 +14,23 @@ use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
-    // Menampilkan halaman formulir checkout
+    protected $tripayService;
+
+    public function __construct(TripayService $tripayService)
+    {
+        $this->tripayService = $tripayService;
+    }
+
     public function index(Request $request)
     {
         $selectedIds = $request->input('selected_items', []);
+        $quantities = $request->input('quantities', []);
 
-        // Jika tidak ada item terpilih dari form, redirect kembali
         if (empty($selectedIds)) {
             return redirect()->route('cart.index')->with('error', 'Pilih minimal satu produk untuk di-checkout.');
         }
 
-        // Ambil data keranjang dari DB berdasarkan item yang dicentang
+        // Ambil item keranjang berdasarkan ID yang dicentang
         $cartItems = Cart::with('product')
             ->where('user_id', Auth::id())
             ->whereIn('id', $selectedIds)
@@ -34,14 +40,32 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Produk di keranjang tidak ditemukan.');
         }
 
+        // Update kuantitas di database/memory sesuai input dari form keranjang
+        foreach ($cartItems as $item) {
+            if (isset($quantities[$item->id])) {
+                $item->quantity = (int) $quantities[$item->id];
+                $item->save(); // Simpan perubahan qty dari keranjang ke database
+            }
+        }
+
         $total = $cartItems->sum(function ($item) {
             return $item->product->price * $item->quantity;
         });
 
-        return view('checkout.index', compact('cartItems', 'total', 'selectedIds'));
+        // Ambil Channel Pembayaran dari Tripay
+        $channels = [];
+        try {
+            $tripayResponse = $this->tripayService->getPaymentChannels();
+            if (isset($tripayResponse->success) && $tripayResponse->success) {
+                $channels = $tripayResponse->data;
+            }
+        } catch (\Exception $e) {
+            // Mengabaikan error jika Tripay API timeout/gagal
+        }
+
+        return view('checkout.index', compact('cartItems', 'total', 'selectedIds', 'channels'));
     }
 
-    // Memproses pembuatan order & pembayaran
     public function store(Request $request)
     {
         $request->validate([
@@ -50,30 +74,27 @@ class CheckoutController extends Controller
             'phone'          => 'required|string|max:20',
             'address'        => 'required|string',
             'payment_method' => 'required|string',
-            'cart_ids'       => 'required|array', // Menerima array ID item keranjang
+            'cart_ids'       => 'required|array',
             'cart_ids.*'     => 'exists:carts,id',
         ]);
 
-        // Ambil item dari database
         $cartItems = Cart::with('product')
             ->where('user_id', Auth::id())
             ->whereIn('id', $request->cart_ids)
             ->get();
 
         if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Keranjang belanja kamu kosong atau item tidak valid!');
+            return redirect()->route('cart.index')->with('error', 'Keranjang belanja kamu kosong!');
         }
 
-        // Hitung total harga
         $total = $cartItems->sum(function ($item) {
             return $item->product->price * $item->quantity;
         });
 
-        // Database Transaction untuk menjamin konsistensi data
         DB::beginTransaction();
 
         try {
-            // 1. Buat Data Order
+            // 1. Buat Order Baru
             $order = Order::create([
                 'user_id'        => Auth::id(),
                 'invoice'        => 'INV-' . strtoupper(Str::random(8)),
@@ -85,7 +106,7 @@ class CheckoutController extends Controller
                 'address'        => $request->address,
             ]);
 
-            // 2. Buat Item Order & Potong Stok Produk
+            // 2. Simpan Item Order & Kurangi Stok
             foreach ($cartItems as $item) {
                 $product = $item->product;
 
@@ -103,51 +124,43 @@ class CheckoutController extends Controller
                     'subtotal'     => $product->price * $item->quantity,
                 ]);
 
-                // Kurangi stok produk
                 $product->decrement('stock', $item->quantity);
             }
 
-            // 3. Buat Record Pembayaran (Simulasi)
+            // LOAD RELASI ORDER ITEMS SUPAYA KEBACA OLEH TRIPAY SERVICE
+            $order->load('orderItems');
+
+            // 3. Panggil API Tripay untuk membuat transaksi
+            $tripayRes = $this->tripayService->createTransaction($order, $request->payment_method);
+
+            // 4. Simpan detail pembayaran Tripay
             Payment::create([
                 'order_id'  => $order->id,
                 'method'    => $request->payment_method,
-                'reference' => 'PAY-' . time(),
+                'reference' => $tripayRes->data->reference,
                 'amount'    => $total,
                 'status'    => 'UNPAID',
             ]);
 
-            // 4. Hapus item terpilih dari tabel carts
-            Cart::whereIn('id', $request->cart_ids)
-                ->where('user_id', Auth::id())
-                ->delete();
+            // 5. Hapus barang yang di-checkout dari keranjang
+            Cart::whereIn('id', $request->cart_ids)->where('user_id', Auth::id())->delete();
 
             DB::commit();
 
-            return redirect()->route('checkout.success', $order->id)->with('success', 'Pesanan berhasil dibuat!');
+            // 6. Redirect ke halaman instruksi bayar dari Tripay
+            return redirect($tripayRes->data->checkout_url);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Terjadi kesalahan saat membuat pesanan: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
-    // Halaman sukses & Instruksi Pembayaran
-    public function success($id)
+    /**
+     * Method untuk menangani kembalinya pembeli dari Tripay (Return URL)
+     */
+    public function success(Request $request)
     {
-        $order = Order::with(['items', 'payment'])->where('user_id', Auth::id())->findOrFail($id);
-        return view('checkout.success', compact('order'));
-    }
-
-    // Simulasi Bayar Sekarang (Ubah status jadi PAID)
-    public function payNow($id)
-    {
-        $order = Order::where('user_id', Auth::id())->findOrFail($id);
-
-        $order->update(['status' => 'PAID']);
-        if ($order->payment) {
-            $order->payment->update(['status' => 'PAID']);
-        }
-
-        return back()->with('success', 'Pembayaran berhasil dikonfirmasi! Pesanan Anda sedang diproses.');
+        return redirect()->route('home')->with('success', 'Transaksi berhasil dibuat. Silakan selesaikan pembayaran Anda!');
     }
 }

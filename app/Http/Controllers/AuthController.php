@@ -26,12 +26,13 @@ class AuthController extends Controller
 
             $user = Auth::user();
 
-            // Pengalihan otomatis jika role ADMIN
+            // Pengalihan otomatis jika role ADMIN + Pesan Animasi
             if (strtoupper($user->role) === 'ADMIN') {
-                return redirect()->route('admin.dashboard');
+                return redirect()->route('admin.dashboard')->with('success', 'Selamat datang kembali ' . $user->name . '!');
             }
 
-            return redirect()->intended('/');
+            // Pengalihan jika role USER + Pesan Animasi
+            return redirect()->intended('/')->with('success', 'Selamat datang kembali, ' . $user->name . '!');
         }
 
         return back()->withErrors(['email' => 'Email atau password salah!'])->withInput();
@@ -66,6 +67,7 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        // Ditambahkan pesan session agar SweetAlert2 logout terpicu
+        return redirect('/')->with('success', 'Anda telah berhasil logout!');
     }
 }

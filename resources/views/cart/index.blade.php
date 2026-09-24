@@ -22,7 +22,7 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
             <div class="text-6xl mb-4">🛒</div>
             <p class="text-gray-500 text-lg mb-6">Keranjang belanja kamu masih kosong.</p>
-            <a href="{{ route('home') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-lg shadow transition">
+            <a href="{{ route('home') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-lg shadow">
                 Mulai Belanja Now
             </a>
         </div>
@@ -48,23 +48,20 @@
                         </button>
                     </div>
 
-                    <!-- List Item Keranjang -->
-                    @foreach($cartItems as $item)
-                        @php
+                    <!-- List Item Keranjang (Menggunakan Native PHP Loop) -->
+                    <?php foreach ($cartItems as$item): ?>
+                        <?php 
                             $imagePath = str_starts_with($item->product->image, 'http') 
                                 ? $item->product->image 
-                                : asset('storage/' . $item->product->image);
-                            $itemSubtotal = $item->product->price * $item->quantity;
-                        @endphp
+                                : asset('storage/' . $item->product->image);$itemSubtotal = $item->product->price * $item->quantity;
+                        ?>
                         
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center gap-4">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center gap-4 cart-item-row" data-id="{{ $item->id }}" data-price="{{ $item->product->price }}">
                             
                             <!-- Checkbox Item -->
                             <input type="checkbox" 
                                    name="selected_items[]" 
                                    value="{{ $item->id }}" 
-                                   data-price="{{ $item->product->price }}" 
-                                   data-quantity="{{ $item->quantity }}"
                                    class="item-checkbox w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer flex-shrink-0">
 
                             <!-- Gambar Produk -->
@@ -79,29 +76,33 @@
                                 <p class="text-sm font-medium text-indigo-600">Rp {{ number_format($item->product->price, 0, ',', '.') }}</p>
                             </div>
 
-                            <!-- Tombol Plus / Minus -->
+                            <!-- Tombol Plus / Minus Instan -->
                             <div class="flex items-center gap-1 border border-gray-300 rounded-lg p-1 bg-gray-50">
                                 <button type="button" 
-                                        onclick="updateCartQuantity('{{ $item->id }}', {{ max(1, $item->quantity - 1) }})"
-                                        class="w-7 h-7 flex items-center justify-center bg-white border border-gray-300 rounded text-gray-700 hover:bg-gray-200 font-bold text-sm shadow-sm"
-                                        {{ $item->quantity <= 1 ? 'disabled style=opacity:0.5;' : '' }}>
+                                        onclick="adjustQty('{{ $item->id }}', -1, {{$item->product->stock }})"
+                                        id="btn-minus-{{ $item->id }}"
+                                        class="w-7 h-7 flex items-center justify-center bg-white border border-gray-300 rounded text-gray-700 hover:bg-gray-200 font-bold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        <?php echo $item->quantity <= 1 ? 'disabled' : ''; ?>>
                                     -
                                 </button>
 
-                                <span class="w-8 text-center font-semibold text-gray-800 text-sm">{{ $item->quantity }}</span>
+                                <span id="qty-label-{{ $item->id }}" class="w-8 text-center font-semibold text-gray-800 text-sm"><?php echo $item->quantity; ?></span>
+                                
+                                <input type="hidden" name="quantities[{{ $item->id }}]" id="qty-val-{{ $item->id }}" value="<?php echo $item->quantity; ?>">
 
                                 <button type="button" 
-                                        onclick="updateCartQuantity('{{ $item->id }}', {{ $item->quantity + 1 }})"
-                                        class="w-7 h-7 flex items-center justify-center bg-white border border-gray-300 rounded text-gray-700 hover:bg-gray-200 font-bold text-sm shadow-sm"
-                                        {{ $item->quantity >= $item->product->stock ? 'disabled style=opacity:0.5;' : '' }}>
+                                        onclick="adjustQty('{{ $item->id }}', 1, {{$item->product->stock }})"
+                                        id="btn-plus-{{ $item->id }}"
+                                        class="w-7 h-7 flex items-center justify-center bg-white border border-gray-300 rounded text-gray-700 hover:bg-gray-200 font-bold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        <?php echo $item->quantity >=$item->product->stock ? 'disabled' : ''; ?>>
                                     +
                                 </button>
                             </div>
 
                             <!-- Subtotal & Hapus -->
                             <div class="text-right min-w-[100px]">
-                                <p class="font-bold text-gray-900 text-sm">
-                                    Rp {{ number_format($itemSubtotal, 0, ',', '.') }}
+                                <p class="font-bold text-gray-900 text-sm" id="item-subtotal-{{ $item->id }}">
+                                    Rp <?php echo number_format($itemSubtotal, 0, ',', '.'); ?>
                                 </p>
                                 
                                 <button type="button" 
@@ -111,7 +112,7 @@
                                 </button>
                             </div>
                         </div>
-                    @endforeach
+                    <?php endforeach; ?>
                 </div>
 
                 <!-- Ringkasan Belanja -->
@@ -119,7 +120,7 @@
                     <h2 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Ringkasan Belanja</h2>
                     
                     <div class="flex justify-between mb-2 text-gray-600 text-sm">
-                        <span>Total Barang Dicenthang</span>
+                        <span>Total Barang Dicentang</span>
                         <span id="selected-count" class="font-semibold text-gray-800">0 barang</span>
                     </div>
 
@@ -138,18 +139,11 @@
                     <button type="submit" 
                             id="checkout-btn" 
                             disabled 
-                            class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg shadow transition">
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg shadow">
                         Lanjut ke Checkout (<span id="btn-count">0</span>)
                     </button>
                 </div>
             </div>
-        </form>
-
-        <!-- Form Tersembunyi untuk Update Quantity -->
-        <form id="update-qty-form" action="{{ route('cart.update') }}" method="POST" class="hidden">
-            @csrf
-            <input type="hidden" name="cart_id" id="update-cart-id">
-            <input type="hidden" name="quantity" id="update-cart-qty">
         </form>
 
         <!-- Form Tersembunyi untuk Hapus Single Item -->
@@ -165,71 +159,95 @@
     @endif
 </div>
 
-<!-- Script Hitung Total & Interaksi Checkbox -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const selectAll = document.getElementById('select-all');
+        const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+        
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                itemCheckboxes.forEach(cb => {
+                    cb.checked = selectAll.checked;
+                });
+                recalculateTotal();
+            });
+        }
+
+        itemCheckboxes.forEach(cb => {
+            cb.addEventListener('change', recalculateTotal);
+        });
+
+        recalculateTotal();
+    });
+
+    function formatRupiah(amount) {
+        return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
+    }
+
+    function adjustQty(cartId, step, maxStock) {
+        const qtyVal = document.getElementById(`qty-val-${cartId}`);
+        const qtyLabel = document.getElementById(`qty-label-${cartId}`);
+        const btnMinus = document.getElementById(`btn-minus-${cartId}`);
+        const btnPlus = document.getElementById(`btn-plus-${cartId}`);
+        
+        let currentQty = parseInt(qtyVal.value) || 1;
+        let nextQty = currentQty + step;
+
+        if (nextQty >= 1 && nextQty <= maxStock) {
+            qtyVal.value = nextQty;
+            qtyLabel.textContent = nextQty;
+
+            btnMinus.disabled = (nextQty <= 1);
+            btnPlus.disabled = (nextQty >= maxStock);
+
+            const row = document.querySelector(`.cart-item-row[data-id="${cartId}"]`);
+            const price = parseFloat(row.getAttribute('data-price')) || 0;
+            const subtotalLabel = document.getElementById(`item-subtotal-${cartId}`);
+            
+            subtotalLabel.textContent = formatRupiah(price * nextQty);
+
+            recalculateTotal();
+        }
+    }
+
+    function recalculateTotal() {
         const itemCheckboxes = document.querySelectorAll('.item-checkbox');
         const selectedCount = document.getElementById('selected-count');
         const subtotalDisplay = document.getElementById('subtotal-display');
         const totalDisplay = document.getElementById('total-display');
         const checkoutBtn = document.getElementById('checkout-btn');
         const btnCount = document.getElementById('btn-count');
+        const selectAll = document.getElementById('select-all');
 
-        function formatRupiah(number) {
-            return 'Rp ' + new Intl.NumberFormat('id-ID').format(number);
-        }
-
-        function calculateTotal() {
-            let total = 0;
-            let count = 0;
-
-            itemCheckboxes.forEach(cb => {
-                if (cb.checked) {
-                    const price = parseFloat(cb.getAttribute('data-price')) || 0;
-                    const qty = parseInt(cb.getAttribute('data-quantity')) || 0;
-                    total += price * qty;
-                    count++;
-                }
-            });
-
-            selectedCount.textContent = count + ' barang';
-            subtotalDisplay.textContent = formatRupiah(total);
-            totalDisplay.textContent = formatRupiah(total);
-            btnCount.textContent = count;
-
-            if (count > 0) {
-                checkoutBtn.removeAttribute('disabled');
-            } else {
-                checkoutBtn.setAttribute('disabled', 'true');
-            }
-
-            // Update status 'Pilih Semua' jika semua checkbox tercentang
-            if (selectAll && itemCheckboxes.length > 0) {
-                selectAll.checked = (count === itemCheckboxes.length);
-            }
-        }
-
-        if (selectAll) {
-            selectAll.addEventListener('change', function () {
-                itemCheckboxes.forEach(cb => {
-                    cb.checked = selectAll.checked;
-                });
-                calculateTotal();
-            });
-        }
+        let grandTotal = 0;
+        let checkedCount = 0;
 
         itemCheckboxes.forEach(cb => {
-            cb.addEventListener('change', calculateTotal);
+            if (cb.checked) {
+                const cartId = cb.value;
+                const row = cb.closest('.cart-item-row');
+                const price = parseFloat(row.getAttribute('data-price')) || 0;
+                const qty = parseInt(document.getElementById(`qty-val-${cartId}`).value) || 0;
+                
+                grandTotal += price * qty;
+                checkedCount++;
+            }
         });
 
-        calculateTotal();
-    });
+        selectedCount.textContent = checkedCount + ' barang';
+        subtotalDisplay.textContent = formatRupiah(grandTotal);
+        totalDisplay.textContent = formatRupiah(grandTotal);
+        btnCount.textContent = checkedCount;
 
-    function updateCartQuantity(cartId, newQty) {
-        document.getElementById('update-cart-id').value = cartId;
-        document.getElementById('update-cart-qty').value = newQty;
-        document.getElementById('update-qty-form').submit();
+        if (checkedCount > 0) {
+            checkoutBtn.removeAttribute('disabled');
+        } else {
+            checkoutBtn.setAttribute('disabled', 'true');
+        }
+
+        if (selectAll && itemCheckboxes.length > 0) {
+            selectAll.checked = (checkedCount === itemCheckboxes.length);
+        }
     }
 
     function removeCartItem(cartId) {
