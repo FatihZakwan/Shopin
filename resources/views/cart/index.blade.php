@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+<!-- Import SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <h1 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
         🛒 Keranjang Belanja
@@ -23,7 +26,7 @@
             <div class="text-6xl mb-4">🛒</div>
             <p class="text-gray-500 text-lg mb-6">Keranjang belanja kamu masih kosong.</p>
             <a href="{{ route('home') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-lg shadow">
-                Mulai Belanja Now
+                Mulai Belanja Sekarang
             </a>
         </div>
     @else
@@ -42,19 +45,19 @@
                         </label>
 
                         <button type="button" 
-                                onclick="document.getElementById('clear-cart-form').submit();" 
+                                onclick="confirmClearCart()" 
                                 class="text-xs font-semibold text-red-600 hover:text-red-800 hover:underline">
                             🗑️ Hapus Semua
                         </button>
                     </div>
 
-                    <!-- List Item Keranjang (Menggunakan Native PHP Loop) -->
-                    <?php foreach ($cartItems as$item): ?>
-                        <?php 
+                    <!-- List Item Keranjang -->
+                    @foreach ($cartItems as $item)
+                        @php
                             $imagePath = str_starts_with($item->product->image, 'http') 
                                 ? $item->product->image 
                                 : asset('storage/' . $item->product->image);$itemSubtotal = $item->product->price * $item->quantity;
-                        ?>
+                        @endphp
                         
                         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center gap-4 cart-item-row" data-id="{{ $item->id }}" data-price="{{ $item->product->price }}">
                             
@@ -82,19 +85,19 @@
                                         onclick="adjustQty('{{ $item->id }}', -1, {{$item->product->stock }})"
                                         id="btn-minus-{{ $item->id }}"
                                         class="w-7 h-7 flex items-center justify-center bg-white border border-gray-300 rounded text-gray-700 hover:bg-gray-200 font-bold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        <?php echo $item->quantity <= 1 ? 'disabled' : ''; ?>>
+                                        {{ $item->quantity <= 1 ? 'disabled' : '' }}>
                                     -
                                 </button>
 
-                                <span id="qty-label-{{ $item->id }}" class="w-8 text-center font-semibold text-gray-800 text-sm"><?php echo $item->quantity; ?></span>
+                                <span id="qty-label-{{ $item->id }}" class="w-8 text-center font-semibold text-gray-800 text-sm">{{ $item->quantity }}</span>
                                 
-                                <input type="hidden" name="quantities[{{ $item->id }}]" id="qty-val-{{ $item->id }}" value="<?php echo $item->quantity; ?>">
+                                <input type="hidden" name="quantities[{{ $item->id }}]" id="qty-val-{{ $item->id }}" value="{{ $item->quantity }}">
 
                                 <button type="button" 
                                         onclick="adjustQty('{{ $item->id }}', 1, {{$item->product->stock }})"
                                         id="btn-plus-{{ $item->id }}"
                                         class="w-7 h-7 flex items-center justify-center bg-white border border-gray-300 rounded text-gray-700 hover:bg-gray-200 font-bold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                        <?php echo $item->quantity >=$item->product->stock ? 'disabled' : ''; ?>>
+                                        {{ $item->quantity >=$item->product->stock ? 'disabled' : '' }}>
                                     +
                                 </button>
                             </div>
@@ -102,7 +105,7 @@
                             <!-- Subtotal & Hapus -->
                             <div class="text-right min-w-[100px]">
                                 <p class="font-bold text-gray-900 text-sm" id="item-subtotal-{{ $item->id }}">
-                                    Rp <?php echo number_format($itemSubtotal, 0, ',', '.'); ?>
+                                    Rp {{ number_format($itemSubtotal, 0, ',', '.') }}
                                 </p>
                                 
                                 <button type="button" 
@@ -112,7 +115,7 @@
                                 </button>
                             </div>
                         </div>
-                    <?php endforeach; ?>
+                    @endforeach
                 </div>
 
                 <!-- Ringkasan Belanja -->
@@ -136,10 +139,11 @@
                         <span id="total-display" class="text-indigo-600">Rp 0</span>
                     </div>
                     
-                    <button type="submit" 
+                    <button type="button" 
                             id="checkout-btn" 
+                            onclick="proceedToCheckout()"
                             disabled 
-                            class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg shadow">
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg shadow flex items-center justify-center gap-1 transition">
                         Lanjut ke Checkout (<span id="btn-count">0</span>)
                     </button>
                 </div>
@@ -250,11 +254,82 @@
         }
     }
 
-    function removeCartItem(cartId) {
-        if (confirm('Apakah kamu yakin ingin menghapus produk ini?')) {
-            document.getElementById('remove-cart-id').value = cartId;
-            document.getElementById('remove-item-form').submit();
+    // --- PROSES CHECKOUT DENGAN SWEETALERT2 ---
+    function proceedToCheckout() {
+        const checkedItems = document.querySelectorAll('.item-checkbox:checked');
+        
+        if (checkedItems.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Pilih Produk',
+                text: 'Harap centang minimal 1 produk untuk dilanjutkan ke checkout.',
+                confirmButtonColor: '#4F46E5',
+                customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl font-bold px-5 py-2.5' }
+            });
+            return;
         }
+
+        // Tampilkan Loading Alert
+        Swal.fire({
+            title: 'Menyiapkan Checkout...',
+            text: 'Harap tunggu, Anda sedang diarahkan ke halaman pembayaran.',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            customClass: { popup: 'rounded-2xl' },
+            willOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Submit Form Utama Checkout
+        document.getElementById('checkout-form').submit();
+    }
+
+    // --- KONFIRMASI HAPUS SINGLE ITEM DENGAN SWEETALERT2 ---
+    function removeCartItem(cartId) {
+        Swal.fire({
+            title: 'Hapus Produk?',
+            text: 'Produk akan dihapus dari keranjang belanja kamu.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            customClass: { 
+                popup: 'rounded-2xl', 
+                confirmButton: 'rounded-xl font-bold px-4 py-2',
+                cancelButton: 'rounded-xl font-bold px-4 py-2' 
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('remove-cart-id').value = cartId;
+                document.getElementById('remove-item-form').submit();
+            }
+        });
+    }
+
+    // --- KONFIRMASI HAPUS SEMUA DENGAN SWEETALERT2 ---
+    function confirmClearCart() {
+        Swal.fire({
+            title: 'Kosongkan Keranjang?',
+            text: 'Semua item di dalam keranjang belanja akan dihapus.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Ya, Hapus Semua',
+            cancelButtonText: 'Batal',
+            customClass: { 
+                popup: 'rounded-2xl', 
+                confirmButton: 'rounded-xl font-bold px-4 py-2',
+                cancelButton: 'rounded-xl font-bold px-4 py-2' 
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('clear-cart-form').submit();
+            }
+        });
     }
 </script>
 @endsection
