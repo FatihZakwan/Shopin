@@ -66,7 +66,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::post('/checkout/pay/{id}', [CheckoutController::class, 'payNow'])->name('checkout.pay');
 
-<<<<<<< HEAD
     // Orders Routes
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
@@ -121,7 +120,6 @@ Route::get('/test-email', function () {
     } catch (\Exception $e) {
         return 'Gagal mengirim email: ' . $e->getMessage();
     }
-=======
    Route::middleware(['auth'])->group(function () {
     Route::post('/admin/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
     Route::put('/admin/users/{id}', [AdminController::class, 'updateUser'])->name('admin.users.update');
@@ -129,6 +127,4 @@ Route::get('/test-email', function () {
 });
 // Rute khusus untuk Halaman Dashboard Admin
 Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
-
->>>>>>> 6b2c316134978983c0a7ef62f70651855ad77a04
 });

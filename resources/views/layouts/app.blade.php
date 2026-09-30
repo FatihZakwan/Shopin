@@ -34,23 +34,23 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-[#E3F2FD] text-[#0D47A1] flex flex-col min-h-screen">
+<body class="bg-gray-100 flex flex-col min-h-screen">
 
     <!-- Navbar -->
-    <nav class="bg-[#2196F3] text-white shadow-md sticky top-0 z-50">
+    <nav class="bg-indigo-600 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
             
-            <a href="/" class="text-2xl font-bold tracking-wider flex items-center gap-2 text-white">
+            <a href="/" class="text-2xl font-bold tracking-wider flex items-center gap-2">
                 <i class="fa-solid fa-bag-shopping"></i> SHOPIN
             </a>
 
             <!-- Search Form -->
-            <form action="/" method="GET" class="w-full md:w-1/2 flex items-center bg-white rounded-lg overflow-hidden px-2 py-1 shadow-sm">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari produk di Shopin..." class="w-full px-3 py-1 text-[#0D47A1] outline-none text-sm bg-transparent">
+            <form action="/" method="GET" class="w-full md:w-1/2 flex items-center bg-white rounded-lg overflow-hidden px-2 py-1">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari produk di Shopin..." class="w-full px-3 py-1 text-gray-800 outline-none text-sm">
                 @if(request('category'))
                     <input type="hidden" name="category" value="{{ request('category') }}">
                 @endif
-                <button type="submit" class="bg-[#0D47A1] text-white px-4 py-1.5 rounded-md hover:bg-[#1565C0] text-sm">
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-1.5 rounded-md hover:bg-indigo-700 text-sm">
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
             </form>
@@ -58,7 +58,6 @@
             <!-- Nav Links -->
             <div class="flex items-center gap-4 text-sm font-medium">
                 @auth
-<<<<<<< HEAD
                     <!-- Khusus Super Admin -->
                     @if(strtolower(Auth::user()->role) === 'super_admin')
                         <a href="/super-admin/dashboard" class="hover:underline text-amber-300 font-bold flex items-center gap-1">
@@ -76,23 +75,12 @@
                     <!-- Khusus User / Pembeli Biasa -->
                     @if(strtolower(Auth::user()->role) === 'user')
                         <a href="/cart" class="hover:underline flex items-center gap-1">
-=======
-                    @if(Auth::user()->role === 'ADMIN')
-                        <!-- Ubah dari href="{{ route('products.index') }}" menjadi: -->
-                  <a href="{{ route('admin.dashboard') }}" class="bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-800 transition flex items-center space-x-1">
-                     <i class="fas font-medium fa-user-shield text-xs"></i>
-                        <span>Admin</span>
-                  </a>
-                    @else
-                        <a href="/cart" class="hover:underline flex items-center gap-1 text-white">
->>>>>>> 6b2c316134978983c0a7ef62f70651855ad77a04
                             <i class="fa-solid fa-cart-shopping"></i> Keranjang
                         </a>
-                        <a href="/orders" class="hover:underline flex items-center gap-1 text-white">
+                        <a href="/orders" class="hover:underline flex items-center gap-1">
                             <i class="fa-solid fa-box"></i> Pesanan
                         </a>
                     @endif
-<<<<<<< HEAD
 
                     <!-- Badge User -->
                     <span class="text-xs bg-indigo-700 px-2 py-1 rounded">
@@ -102,12 +90,6 @@
                     <!-- Form Logout -->
                     <form id="logout-form" action="/logout" method="POST" class="hidden">
                         @csrf
-=======
-                    <span class="text-xs bg-[#0D47A1] px-2 py-1 rounded"><i class="fa-solid fa-user"></i> {{ Auth::user()->name }}</span>
-                    <form action="/logout" method="POST" class="inline">
-                        @csrf
-                        <button type="submit" class="bg-[#E3F2FD] text-[#0D47A1] hover:bg-white px-3 py-1 rounded text-white text-xs font-semibold">Logout</button>
->>>>>>> 6b2c316134978983c0a7ef62f70651855ad77a04
                     </form>
 
                     <!-- Tombol Logout -->
@@ -115,13 +97,8 @@
                         Logout
                     </button>
                 @else
-<<<<<<< HEAD
                     <a href="/login" class="hover:underline"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
                     <a href="/register" class="bg-white text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"><i class="fa-solid fa-user-plus"></i> Register</a>
-=======
-                    <a href="/login" class="hover:underline text-white"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
-                    <a href="/register" class="bg-white text-[#0D47A1] px-3 py-1.5 rounded-lg hover:bg-[#E3F2FD] font-semibold"><i class="fa-solid fa-user-plus"></i> Register</a>
->>>>>>> 6b2c316134978983c0a7ef62f70651855ad77a04
                 @endauth
             </div>
         </div>
@@ -133,7 +110,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-[#0D47A1] text-[#E3F2FD] py-4 text-center text-sm mt-8">
+    <footer class="bg-gray-800 text-gray-300 py-4 text-center text-sm mt-8">
         &copy; 2026 SHOPIN. Project Pembelajaran Laravel.
     </footer>
 
