@@ -35,7 +35,7 @@
         <!-- Foto Produk Besar -->
         <div class="aspect-square bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 relative">
             @if($product->image)
-                <img src="{{ $product->image }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+            <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-full h-full object-cover rounded-xl">
             @else
                 <div class="w-full h-full flex items-center justify-center text-gray-300">
                     <i class="fa-solid fa-image text-6xl"></i>

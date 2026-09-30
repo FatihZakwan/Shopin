@@ -12,8 +12,13 @@
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-gray-700">Email</label>
+            <label class="block text-sm font-medium text-gray-700">Email (Email Utama)</label>
             <input type="email" name="email" value="{{ old('email') }}" required class="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Email (Email Notifikasi)</label>
+            <input type="email" name="email_notifikasi" value="{{ old('email_notifikasi') }}" required class="w-full mt-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition">
         </div>
 
         <!-- Input Password -->

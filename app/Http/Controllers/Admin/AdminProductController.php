@@ -24,6 +24,7 @@ class AdminProductController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'category'    => 'required|string', // Tambahkan ini
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
@@ -34,6 +35,7 @@ class AdminProductController extends Controller
 
         Product::create([
             'name' => $request->name,
+            'category'    => $request->category, // TAMBAHKAN BARIS INI
             'description' => $request->description,
             'price' => $request->price,
             'stock' => $request->stock,

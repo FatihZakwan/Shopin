@@ -4,30 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config('app.name', 'SHOPIN') }}</title>
+
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Animate.css untuk animasi popup -->
+    <!-- Animate.css -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <!-- SweetAlert2 CSS & JS CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <!-- FontAwesome Icon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <!-- SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- CSS khusus untuk menyembunyikan elemen x-cloak Alpine.js -->
+
+    <!-- CSS Overlay Loading & x-cloak -->
     <style>
         #global-loading-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.6);
-        backdrop-filter: blur(4px);
-        z-index: 9999;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        color: white;
-    }
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+        }
         [x-cloak] { display: none !important; }
     </style>
 </head>
@@ -55,9 +58,22 @@
             <!-- Nav Links -->
             <div class="flex items-center gap-4 text-sm font-medium">
                 @auth
-                    @if(strtoupper(Auth::user()->role) === 'ADMIN')
-                        <a href="/admin" class="hover:underline"><i class="fa-solid fa-gauge"></i> Dashboard</a>
-                    @else
+                    <!-- Khusus Super Admin -->
+                    @if(strtolower(Auth::user()->role) === 'super_admin')
+                        <a href="/super-admin/dashboard" class="hover:underline text-amber-300 font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-user-shield"></i> Super Admin Panel
+                        </a>
+                    @endif
+
+                    <!-- Khusus Admin Toko Saja -->
+                    @if(strtolower(Auth::user()->role) === 'admin')
+                        <a href="/admin/dashboard" class="hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-gauge"></i> Kelola Toko
+                        </a>
+                    @endif
+
+                    <!-- Khusus User / Pembeli Biasa -->
+                    @if(strtolower(Auth::user()->role) === 'user')
                         <a href="/cart" class="hover:underline flex items-center gap-1">
                             <i class="fa-solid fa-cart-shopping"></i> Keranjang
                         </a>
@@ -65,56 +81,21 @@
                             <i class="fa-solid fa-box"></i> Pesanan
                         </a>
                     @endif
+
+                    <!-- Badge User -->
                     <span class="text-xs bg-indigo-700 px-2 py-1 rounded">
-    <i class="fa-solid fa-user"></i> {{ Auth::user()->name }}
-</span>
+                        <i class="fa-solid fa-user"></i> {{ Auth::user()->name }}
+                    </span>
 
-<!-- Form Logout (Disembunyikan) -->
-<form id="logout-form" action="/logout" method="POST" class="hidden">
-    @csrf
-</form>
+                    <!-- Form Logout -->
+                    <form id="logout-form" action="/logout" method="POST" class="hidden">
+                        @csrf
+                    </form>
 
-<!-- Tombol Logout (Tampilan Persis Sama) -->
-<button type="button" onclick="confirmLogout()" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-white text-xs transition">
-    Logout
-</button>
-
-<!-- Script SweetAlert2 untuk Konfirmasi & Loading Logout -->
-<script>
-    function confirmLogout() {
-        Swal.fire({
-            title: 'Apakah Anda ingin logout?',
-            text: 'Sesi Anda akan diakhiri.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444', // Merah (Senada dengan bg-red-500)
-            cancelButtonColor: '#6b7280',  // Abu-abu
-            confirmButtonText: 'Ya, Logout',
-            cancelButtonText: 'Batal',
-            customClass: {
-                popup: 'rounded-2xl',
-                confirmButton: 'rounded-xl font-bold px-4 py-2 text-sm',
-                cancelButton: 'rounded-xl font-bold px-4 py-2 text-sm'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Animasi Loading SweetAlert2 saat memproses logout
-                Swal.fire({
-                    title: 'Keluar...',
-                    text: 'Sedang memproses logout Anda.',
-                    allowOutsideClick: false,
-                    showConfirmButton: false,
-                    willOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
-                // Jalankan Form Logout
-                document.getElementById('logout-form').submit();
-            }
-        });
-    }
-</script>
+                    <!-- Tombol Logout -->
+                    <button type="button" onclick="confirmLogout()" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-white text-xs transition">
+                        Logout
+                    </button>
                 @else
                     <a href="/login" class="hover:underline"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
                     <a href="/register" class="bg-white text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"><i class="fa-solid fa-user-plus"></i> Register</a>
@@ -133,8 +114,57 @@
         &copy; 2026 SHOPIN. Project Pembelajaran Laravel.
     </footer>
 
-    <!-- Script Animasi Notifikasi SweetAlert2 -->
+    <!-- Global Loading Overlay -->
+    <div id="global-loading-overlay">
+        <div class="inline-block w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p class="text-sm font-semibold tracking-wide text-white" id="loading-text">Memproses...</p>
+    </div>
+
+    <!-- Scripts -->
     <script>
+        function confirmLogout() {
+            Swal.fire({
+                title: 'Apakah Anda ingin logout?',
+                text: 'Sesi Anda akan diakhiri.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Logout',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    popup: 'rounded-2xl',
+                    confirmButton: 'rounded-xl font-bold px-4 py-2 text-sm',
+                    cancelButton: 'rounded-xl font-bold px-4 py-2 text-sm'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Keluar...',
+                        text: 'Sedang memproses logout Anda.',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        willOpen: () => { Swal.showLoading(); }
+                    });
+                    document.getElementById('logout-form').submit();
+                }
+            });
+        }
+
+        function showGlobalLoading(text = 'Memproses...') {
+            const overlay = document.getElementById('global-loading-overlay');
+            const loadingText = document.getElementById('loading-text');
+            if (overlay && loadingText) {
+                loadingText.innerText = text;
+                overlay.style.display = 'flex';
+            }
+        }
+
+        function hideGlobalLoading() {
+            const overlay = document.getElementById('global-loading-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             @if(session('success'))
                 Swal.fire({
@@ -144,12 +174,8 @@
                     showConfirmButton: false,
                     timer: 2500,
                     timerProgressBar: true,
-                    showClass: {
-                        popup: 'animate__animated animate__fadeInDown'
-                    },
-                    hideClass: {
-                        popup: 'animate__animated animate__fadeOutUp'
-                    }
+                    showClass: { popup: 'animate__animated animate__fadeInDown' },
+                    hideClass: { popup: 'animate__animated animate__fadeOutUp' }
                 });
             @endif
 
@@ -159,34 +185,10 @@
                     title: 'Gagal!',
                     text: @json(session('error') ?? $errors->first()),
                     confirmButtonColor: '#4F46E5',
-                    showClass: {
-                        popup: 'animate__animated animate__shakeX'
-                    }
+                    showClass: { popup: 'animate__animated animate__shakeX' }
                 });
             @endif
         });
     </script>
-    <!-- Global Loading Overlay -->
-<div id="global-loading-overlay">
-    <div class="inline-block w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-    <p class="text-sm font-semibold tracking-wide text-white" id="loading-text">Memproses...</p>
-</div>
-
-<script>
-    function showGlobalLoading(text = 'Memproses...') {
-        const overlay = document.getElementById('global-loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-        if (overlay && loadingText) {
-            loadingText.innerText = text;
-            overlay.style.display = 'flex';
-        }
-    }
-
-    function hideGlobalLoading() {
-        const overlay = document.getElementById('global-loading-overlay');
-        if (overlay) overlay.style.display = 'none';
-    }
-</script>
-
 </body>
 </html>

@@ -5,13 +5,16 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">➕ Tambah Produk Baru</h1>
 
-        <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <form id="form-tambah-produk" action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Produk</label>
                 <input type="text" name="name" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
             </div>
-
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Kategori</label>
+                <input type="text" name="category" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1">Deskripsi</label>
                 <textarea name="description" rows="3" required class="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
@@ -40,4 +43,22 @@
         </form>
     </div>
 </div>
+
+<!-- CDN SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    document.getElementById('form-tambah-produk').addEventListener('submit', function (e) {
+        Swal.fire({
+            title: 'Memproses Produk...',
+            text: 'Mohon tunggu sebentar, data dan gambar sedang diunggah.',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+    });
+</script>
 @endsection

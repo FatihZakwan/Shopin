@@ -11,21 +11,24 @@
         </div>
     </div>
 
-    <!-- Filter Kategori -->
-    <div class="flex items-center gap-2 overflow-x-auto pb-2">
-        <span class="text-xs font-bold uppercase text-gray-400 mr-2 flex items-center gap-1">
-            <i class="fa-solid fa-filter"></i> Kategori:
-        </span>
-        <a href="/" class="px-4 py-1.5 rounded-full text-xs font-semibold {{ !request('category') ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50' }}">
-            Semua
-        </a>
-        @foreach(['Elektronik', 'Fashion', 'Makanan', 'Aksesoris', 'Lainnya'] as $cat)
-            <a href="/?category={{ $cat }}" class="px-4 py-1.5 rounded-full text-xs font-semibold {{ request('category') == $cat ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50' }}">
-                {{ $cat }}
-            </a>
-        @endforeach
-    </div>
+   <!-- Filter Kategori -->
+<div class="flex items-center gap-2 overflow-x-auto pb-2">
+    <span class="text-xs font-bold uppercase text-gray-400 mr-2 flex items-center gap-1">
+        <i class="fa-solid fa-filter"></i> Kategori:
+    </span>
+    
+    @foreach($categories as $cat)
+        @php
+            // Cek status aktif: Jika 'Semua' dan URL tidak ada parameter category, atau jika nama category cocok
+            $isActive = (request('category') == $cat) || (!request('category') && $cat == 'Semua');
+        @endphp
 
+        <a href="{{ $cat == 'Semua' ? url('/') : url('/?category=' . urlencode($cat)) }}" 
+           class="px-4 py-1.5 rounded-full text-xs font-semibold {{ $isActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50' }}">
+            {{ $cat }}
+        </a>
+    @endforeach
+</div>
     <!-- Grid Produk ala Shopee -->
     <div>
         <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -36,19 +39,19 @@
             @forelse($products as $product)
                 <a href="{{ route('products.show', $product->id) }}" class="group bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition duration-200 flex flex-col justify-between">
                     <div>
-                        <!-- Gambar Produk -->
-                        <div class="aspect-square bg-gray-100 relative overflow-hidden">
-                            @if($product->image)
-                                <img src="{{ $product->image }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                            @else
-                                <div class="w-full h-full flex items-center justify-center text-gray-300">
-                                    <i class="fa-solid fa-image text-4xl"></i>
-                                </div>
-                            @endif
-                            <span class="absolute top-2 left-2 bg-indigo-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
-                                {{ $product->category }}
-                            </span>
-                        </div>
+<!-- Gambar Produk -->
+<div class="aspect-square bg-gray-100 relative overflow-hidden">
+    @if($product->image)
+        <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+    @else
+        <div class="w-full h-full flex items-center justify-center text-gray-300">
+            <i class="fa-solid fa-image text-4xl"></i>
+        </div>
+    @endif
+    <span class="absolute top-2 left-2 bg-indigo-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">
+        {{ $product->category }}
+    </span>
+</div>
 
                         <!-- Info Produk (Nama & Harga) -->
                         <div class="p-3">

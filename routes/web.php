@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\TripayCallbackController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\SuperAdminController;
+use Illuminate\Support\Facades\Mail;
 
 /*
 |--------------------------------------------------------------------------
@@ -83,4 +85,38 @@ Route::middleware('auth')->group(function () {
         // CRUD Produk Admin
         Route::resource('products', AdminProductController::class);
     });
+});
+
+// Route Publik / User
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Route khusus ADMIN & SUPER ADMIN (Kelola Produk)
+Route::middleware(['auth', 'role:admin,super_admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminProductController::class, 'index'])->name('dashboard');
+    Route::resource('products', AdminProductController::class);
+});
+
+// Route khusus SUPER ADMIN (Kelola Pengguna & Role)
+Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->name('superadmin.')->group(function () {
+    Route::get('/dashboard', [SuperAdminController::class, 'index'])->name('dashboard');
+    Route::patch('/users/{id}/role', [SuperAdminController::class, 'updateRole'])->name('users.updateRole');
+});
+
+Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->name('superadmin.')->group(function () {
+    Route::get('/dashboard', [SuperAdminController::class, 'index'])->name('dashboard');
+    Route::patch('/users/{id}/role', [SuperAdminController::class, 'updateRole'])->name('users.updateRole');
+    Route::delete('/users/{id}', [SuperAdminController::class, 'destroy'])->name('users.destroy'); // Route baru
+});
+
+Route::get('/test-email', function () {
+    try {
+        Mail::raw('Halo! Ini adalah email uji coba dari aplikasi SHOPIN Laravel.', function ($message) {
+            $message->to('email_tujuan_anda@gmail.com') // Ganti dengan alamat Gmail tujuan
+                    ->subject('Uji Coba Pengiriman Email SHOPIN');
+        });
+
+        return 'Email berhasil dikirim! Silakan periksa kotak masuk/spam Gmail Anda.';
+    } catch (\Exception $e) {
+        return 'Gagal mengirim email: ' . $e->getMessage();
+    }
 });
