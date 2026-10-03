@@ -105,7 +105,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-grow max-w-7xl w-full mx-auto p-4">
+    <main class="grow max-w-7xl w-full mx-auto p-4">
         @yield('content')
     </main>
 

@@ -11,27 +11,6 @@
         </div>
     </div>
 
-<<<<<<< HEAD
-   <!-- Filter Kategori -->
-<div class="flex items-center gap-2 overflow-x-auto pb-2">
-    <span class="text-xs font-bold uppercase text-gray-400 mr-2 flex items-center gap-1">
-        <i class="fa-solid fa-filter"></i> Kategori:
-    </span>
-    
-    @foreach($categories as $cat)
-        @php
-            // Cek status aktif: Jika 'Semua' dan URL tidak ada parameter category, atau jika nama category cocok
-            $isActive = (request('category') == $cat) || (!request('category') && $cat == 'Semua');
-        @endphp
-
-        <a href="{{ $cat == 'Semua' ? url('/') : url('/?category=' . urlencode($cat)) }}" 
-           class="px-4 py-1.5 rounded-full text-xs font-semibold {{ $isActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50' }}">
-            {{ $cat }}
-        </a>
-    @endforeach
-</div>
-    <!-- Grid Produk ala Shopee -->
-=======
     <!-- Filter Kategori -->
     <div class="flex items-center gap-2 overflow-x-auto pb-2">
         <span class="text-xs font-bold uppercase text-[#0D47A1] mr-2 flex items-center gap-1">
@@ -48,7 +27,6 @@
     </div>
 
     <!-- Grid Produk -->
->>>>>>> 6b2c316134978983c0a7ef62f70651855ad77a04
     <div>
         <h2 class="text-lg font-bold text-[#0D47A1] mb-4 flex items-center gap-2">
             <i class="fa-solid fa-bag-shopping text-[#2196F3]"></i> Produk Terbaru
@@ -58,7 +36,7 @@
             @forelse($products as $product)
                 <a href="{{ route('products.show', $product->id) }}" class="group bg-white rounded-2xl overflow-hidden border border-[#E3F2FD] shadow-sm hover:shadow-md hover:-translate-y-1 transition duration-200 flex flex-col justify-between">
                     <div>
-<<<<<<< HEAD
+
 <!-- Gambar Produk -->
 <div class="aspect-square bg-gray-100 relative overflow-hidden">
     @if($product->image)
@@ -72,7 +50,7 @@
         {{ $product->category }}
     </span>
 </div>
-=======
+
                         <!-- Gambar Produk -->
                         <div class="aspect-square bg-[#E3F2FD] relative overflow-hidden">
                             @if($product->image)
@@ -86,7 +64,6 @@
                                 {{ $product->category }}
                             </span>
                         </div>
->>>>>>> 6b2c316134978983c0a7ef62f70651855ad77a04
 
                         <!-- Info Produk -->
                         <div class="p-3">

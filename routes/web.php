@@ -13,6 +13,7 @@ use App\Http\Controllers\TripayCallbackController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\SuperAdminController;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\Admin\WithdrawalAdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -127,4 +128,11 @@ Route::get('/test-email', function () {
 });
 // Rute khusus untuk Halaman Dashboard Admin
 Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/withdrawals', [WithdrawalAdminController::class, 'index'])->name('withdrawals.index');
+    Route::patch('/withdrawals/{id}/approve', [WithdrawalAdminController::class, 'approve'])->name('withdrawals.approve');
+    Route::patch('/withdrawals/{id}/reject', [WithdrawalAdminController::class, 'reject'])->name('withdrawals.reject');
+});
+
 });
